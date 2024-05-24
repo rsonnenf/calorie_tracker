@@ -1,3 +1,5 @@
+import zmq
+
 goals = {1: "Lose Weight",
          2: "Gain Weight",
          3: "Maintain Weight"
@@ -73,8 +75,131 @@ foods = {
     }
 }
 
+# Data compiled from "Metabolic Equivalents for Weight Loss: What Are They & How to Calculate Them",
+# https://blog.nasm.org/metabolic-equivalents-for-weight-loss#:~:text=To%20determine%20calories%20expended%20by,%2F%20200%20%3D%20KCAL%2FMIN.&text=So%20in%2045%20minutes%2C%20this,NEAT%20or%20non%2Dactivity%20thermogenesis.
+
+exercise_data = {
+    1: {
+        "type": "Bicycling",
+        "effort": {
+            "light": {
+                "description": "<10 mph, leisure, for pleasure",
+                "METS": 4.0
+            },
+            "moderate": {
+                "description": "10-11.9 mph, light effort",
+                "METS": 8.0
+            },
+            "vigorous": {
+                "description": "12-13.9 mph, moderate effort",
+                "METS": 10.0
+            },
+            "very vigorous": {
+                "description": "14-15.9 mph, racing or vigorous effort",
+                "METS": 12.0
+            }
+        }
+    },
+    2: {
+        "type": "Conditioning exercise",
+        "effort": {
+            "light": {
+                "description": "calisthenics, home exercise, light or moderate effort, general (example: back "
+                               "exercises), going up & down from the floor",
+                "METS": 3.5
+            },
+            "moderate": {
+                "description": "water aerobics, water calisthenics",
+                "METS": 4.0
+            },
+            "vigorous": {
+                "description": "calisthenics (e.g., pushups, situps, pullups, jumping jacks), heavy, vigorous effort",
+                "METS": 8.0
+            },
+            "very vigorous": {
+                "description": "circuit training, including some aerobic movement with minimal rest, general",
+                "METS": 8.0
+            },
+            "Heavy": {
+                "description": "weight lifting, powerlifting or bodybuilding, vigorous effort",
+                "METS": 6.0
+            },
+            "Stretching": {
+                "description": "stretching, yoga",
+                "METS": 2.5
+            }
+        }
+    },
+    3: {
+        "type": "Home activities",
+        "effort": {
+            "light": {
+                "description": "cleaning, light (dusting, straightening up, changing linen, carrying out the trash)",
+                "METS": 2.5
+            }
+        }
+    },
+    4: {
+        "type": "Walking",
+        "effort": {
+            "light": {
+                "description": "<2.0 mph (strolling, very slow)",
+                "METS": 2.0
+            },
+            "moderate": {
+                "description": "3.5 mph (briskly & carrying objects less than 25 lbs)",
+                "METS": 4.5
+            }
+        }
+    },
+    5: {
+        "type": "Swimming",
+        "effort": {
+            "moderate": {
+                "description": "Swimming laps (freestyle, slow, moderate, or light effort)",
+                "METS": 7.0
+            }
+        }
+    },
+    6: {
+        "type": "Running",
+        "effort": {
+            "moderate": {
+                "description": "5 mph (12 min/mile)",
+                "METS": 8.0
+            },
+            "vigorous": {
+                "description": "7 mph (8.5 min/mile)",
+                "METS": 11.5
+            },
+            "very vigorous": {
+                "description": "10 mph (6 min/mile)",
+                "METS": 16.0
+            }
+        }
+    },
+    7: {
+        "type": "Sports",
+        "effort": {
+            "moderate": {
+                "description": "Basketball, non-game, general",
+                "METS": 6.0
+            },
+            "vigorous": {
+                "description": "Boxing, in the ring, general",
+                "METS": 12.0
+            },
+            "very vigorous": {
+                "description": "Football, touch, flag, general",
+                "METS": 8.0
+            },
+        }
+    }
+}
+
+
 def clear():
-    print("\n" * 1000)
+    print("\n" * 50)
 
 
 def obtain_fitness_goal(user_data):
@@ -83,13 +208,13 @@ def obtain_fitness_goal(user_data):
         # Obtain user's goal selection.
         try:
             goal_selection = int(input("\n"
-                                   "First, what is your fitness goal?\n"
-                                   "\n"
-                                   "1. I want to lose weight.\n"
-                                   "2. I want to gain weight.\n"
-                                   "3. I want to maintain my weight.\n"
-                                   "\n"
-                                   "Type 1, 2, or 3 to enter your fitness goal. "))
+                                       "First, what is your fitness goal?\n"
+                                       "\n"
+                                       "1. I want to lose weight.\n"
+                                       "2. I want to gain weight.\n"
+                                       "3. I want to maintain my weight.\n"
+                                       "\n"
+                                       "Type 1, 2, or 3 to enter your fitness goal. "))
             if goal_selection in range(1, 4):
                 while True:
                     print(f"\n"
@@ -114,123 +239,137 @@ def obtain_fitness_goal(user_data):
         # Obtain confirmation of chosen goal.
 
 
+def obtain_age(user_info):
+    """Obtains user's age."""
+    clear()
+    while True:
+        try:
+            age = int(input("What is your age? "))
+            if age > 0:
+                user_info["user_age"] = age
+                return user_info
+            else:
+                print("Age must be greater than 0.")
+        except ValueError:
+            print("You must enter a number for your age.")
+
+
+def obtain_gender(user_info):
+    """Obtains user's gender."""
+    clear()
+    while True:
+        gender = input("What is your gender? Enter m or f. ").lower()
+        if gender == "m" or gender == "male":
+            user_info["user_gender"] = "m"
+            return user_info
+        elif gender == "f" or gender == "female":
+            user_info["user_gender"] = "f"
+            return user_info
+        else:
+            print("Sorry, we could not register your input. Please try "
+                  "again.")
+
+
+def obtain_height(user_info):
+    """Obtains user's height"""
+    clear()
+    while True:
+        print("For your height, first enter how many feet tall you "
+              "are. Then, enter how many additional inches taller "
+              "you are. Your selection will be converted to centimeters."
+              "\n")
+        try:
+            height_in_feet = int(input("What is your height in "
+                                       "feet only? "))
+            height_in_inches = int(input("How many additional "
+                                         "inches taller are you? "))
+            height_in_cm = round((height_in_feet * 30.48) + (
+                    height_in_inches * 2.54))
+            if height_in_cm > 0:
+                user_info["user_height"] = height_in_cm
+                return user_info
+            else:
+                print("Height must be greater than 0.")
+        except ValueError:
+            print("That is not a valid height.")
+
+
+def obtain_weight(user_info):
+    """Obtain user's weight."""
+    clear()
+    while True:
+        try:
+            weight = int(input("What is your weight in pounds? Your input will be converted to kilograms. "))
+            weight_in_kg = round(weight * .45359237)
+            if weight > 0:
+                user_info["user_weight"] = weight_in_kg
+                return user_info
+            else:
+                print("Your weight must be greater than 0.")
+        except ValueError:
+            print("That is not a valid weight.")
+
+
+def obtain_activity_level(user_info):
+    """Obtains user's activity level."""
+    clear()
+    while True:
+        try:
+            activity_level = int(input("\n"
+                                       "Now, let's enter your activity level. How active would you say you "
+                                       "are based upon the following? \n"
+                                       "1. Sedentary (little to no exercise)\n"
+                                       "2. Lightly active (1-3 days of exercise per week)\n"
+                                       "3. Moderately active (3-5 days of exercise per week)\n"
+                                       "4. Active (6-7 days of exercise per week)\n"
+                                       "5. Very Active (6-7 days of strenuous exercise per week)\n"
+                                       "\n"
+                                       "Enter the corresponding number here: "))
+            if activity_level not in range(1, 6):
+                print("We could not register your input. Please try again.")
+            else:
+                user_info["user_activity_level"] = activity_levels[activity_level]
+                return user_info
+        except ValueError:
+            print("That is not a valid input. Please enter a number 1-5.")
+
+
+def confirm_personal_info(user_info):
+    """Confirms entries by user for personal information."""
+    clear()
+    while True:
+        data_confirmation = int(input(f'You chose the following selections: \n'
+                                      f'Age: {user_info["user_age"]} \n'
+                                      f'Gender: {user_info["user_gender"]} \n'
+                                      f'Height: {user_info["user_height"]} cm \n'
+                                      f'Weight: {user_info["user_weight"]} kg\n'
+                                      f'Activity Level: {user_info["user_activity_level"]} \n'
+                                      f'\n'
+                                      f'Would you like to confirm these selections? \n'
+                                      f'Press 1 if you would like to confirm these selections. Press 2 to start '
+                                      f'over. '))
+        if data_confirmation == 1 or data_confirmation == 2:
+            return data_confirmation
+        else:
+            print("That is not a valid input."
+                  "\n")
+
+
 def obtain_personal_info(user_info):
     """Obtains personal data from user, if they choose to do so, to make
     personalized goal recommendations."""
-    opt_in_procedure = True
-    while opt_in_procedure is True:
-        entering_age = True
-        entering_gender = True
-        entering_height = True
-        entering_weight = True
-        entering_activity_level = True
-        confirming_data = True
+    while True:
         print("Please enter the following information.")
-
-        # Obtain age.
-        clear()
-        while entering_age:
-            try:
-                age = int(input("What is your age? "))
-                if age > 0:
-                    user_info["user_age"] = age
-                    entering_age = False
-                else:
-                    print("Age must be greater than 0.")
-            except ValueError:
-                print("You must enter a number for your age.")
-
-        # Obtain gender
-        clear()
-        while entering_gender:
-            gender = input("What is your gender? Enter m or f. ").lower()
-            if gender == "m" or gender == "male":
-                user_info["user_gender"] = "m"
-                entering_gender = False
-            elif gender == "f" or gender == "female":
-                user_info["user_gender"] = "f"
-                entering_gender = False
-            else:
-                print("Sorry, we could not register your input. Please try "
-                      "again.")
-        # Obtain height
-        clear()
-        while entering_height:
-            print("For your height, first enter how many feet tall you "
-                  "are. Then, enter how many additional inches taller "
-                  "you are. Your selection will be converted to centimeters."
-                  "\n")
-            try:
-                height_in_feet = int(input("What is your height in "
-                                           "feet only? "))
-                height_in_inches = int(input("How many additional "
-                                             "inches taller are you? "))
-                height_in_cm = round((height_in_feet * 30.48) + (
-                        height_in_inches * 2.54))
-                if height_in_cm > 0:
-                    user_info["user_height"] = height_in_cm
-                    entering_height = False
-                else:
-                    print("Height must be greater than 0.")
-            except ValueError:
-                print("That is not a valid height.")
-
-        # Obtain weight
-        clear()
-        while entering_weight:
-            try:
-                weight = int(input("What is your weight in pounds? Your input will be converted to kilograms. "))
-                weight_in_kg = round(weight * .45359237)
-                if weight > 0:
-                    user_info["user_weight"] = weight_in_kg
-                    entering_weight = False
-                else:
-                    print("Your weight must be greater than 0.")
-            except ValueError:
-                print("That is not a valid weight.")
-
-        # Obtain activity level
-        clear()
-        while entering_activity_level:
-            try:
-                activity_level = int(input("\n"
-                                           "Now, let's enter your activity level. How active would you say you "
-                                           "are based upon the following? \n"
-                                           "1. Sedentary (little to no exercise)\n"
-                                           "2. Lightly active (1-3 days of exercise per week)\n"
-                                           "3. Moderately active (3-5 days of exercise per week)\n"
-                                           "4. Active (6-7 days of exercise per week)\n"
-                                           "5. Very Active (6-7 days of strenuous exercise per week)\n"
-                                           "\n"
-                                           "Enter the corresponding number here: "))
-                if activity_level not in range(1, 6):
-                    print("We could not register your input. Please try again.")
-                else:
-                    user_info["user_activity_level"] = activity_levels[activity_level]
-                    entering_activity_level = False
-            except ValueError:
-                print("That is not a valid input. Please enter a number 1-5.")
-
-        # Confirm selections
-        clear()
-        while confirming_data is True:
-            data_confirmation = int(input(f'You chose the following selections: \n'
-                                          f'Age: {user_info["user_age"]} \n'
-                                          f'Gender: {user_info["user_gender"]} \n'
-                                          f'Height: {user_info["user_height"]} cm \n'
-                                          f'Weight: {user_info["user_weight"]} kg\n'
-                                          f'Activity Level: {user_info["user_activity_level"]} \n'
-                                          f'\n'
-                                          f'Would you like to confirm these selections? \n'
-                                          f'Press 1 if you would like to confirm these selections. Press 2 to start '
-                                          f'over. '))
-            if data_confirmation == 1:
-                return user_info
-            elif data_confirmation == 2:
-                confirming_data = False
-            else:
-                print("That is not a valid input."
-                      "\n")
+        obtain_age(user_info)
+        obtain_gender(user_info)
+        obtain_height(user_info)
+        obtain_weight(user_info)
+        obtain_activity_level(user_info)
+        confirmation = confirm_personal_info(user_info)
+        if confirmation == 1:
+            return user_info
+        elif confirmation == 2:
+            user_info = {}
 
 
 def calculate_bmr(user_info):
@@ -281,43 +420,110 @@ def log_food(user_amr):
             food_group_choice = int(input("Enter the number corresponding with your selection here. "))
             if food_group_choice not in range(1, 6):
                 print("Sorry, that is not a valid input. Let's try again.")
-            if food_group_choice == 5:
+            elif food_group_choice == 5:
                 clear()
                 break
+            else:
+                clear()
+                print(
+                    f'You picked {foods[food_group_choice]["category"]}. Below are various foods and their serving sizes.'
+                    f' What food would you like to log?')
+                while True:
+                    for item in foods[food_group_choice]["items"]:
+                        print(f'{item} | {foods[food_group_choice]["items"][item]["serving_size"]}')
+                    print("\n")
+                    item_choice = input("Type your selection here. ").lower()
+                    while True:
+                        try:
+                            num_servings = int(input("How many servings of this food did you have? "))
+                            if num_servings > 0:
+                                break
+                            else:
+                                print("Your serving size cannot be negative.")
+                        except ValueError:
+                            print("You must enter a number.")
+                    if item_choice in foods[food_group_choice]["items"]:
+                        new_user_amr = update_calories(user_amr,
+                                                       foods[food_group_choice]["items"][item_choice]["calories"],
+                                                       num_servings, 0)
+                        user_amr = new_user_amr
+                        return user_amr
+                    else:
+                        print("We did not locate that food. Please check your food choice and spelling.")
         except ValueError:
             print("Sorry, that is not a valid input. Let's try again.")
-        clear()
-        print(f'You picked {foods[food_group_choice]["category"]}. Below are various foods and their serving sizes.'
-              f' What food would you like to log?')
-        while True:
-            for item in foods[food_group_choice]["items"]:
-                print(f'{item} | {foods[food_group_choice]["items"][item]["serving_size"]}')
-            print("\n")
-            item_choice = input("Type your selection here. ").lower()
-            while True:
-                try:
-                    num_servings = int(input("How many servings of this food did you have? "))
-                    if num_servings > 0:
-                        break
-                    else:
-                        print("Your serving size cannot be negative.")
-                except ValueError:
-                    print("You must enter a number.")
-            if item_choice in foods[food_group_choice]["items"]:
-                new_user_amr = update_calories(user_amr, foods[food_group_choice]["items"][item_choice]["calories"], num_servings, 0)
-                user_amr = new_user_amr
-                return user_amr
-            else:
-                print("We did not locate that food. Please check type your food choice and check your spelling.")
+        except KeyError:
+            print("Sorry, that is not a valid input. Let's try again.")
 
 
-def log_exercise():
+def get_burned_calories(METS, weight, duration):
+    """Sends request to calculate_calories microservice to obtain total calories burned from exercise."""
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)  # REQ (REQUEST) socket for sending requests
+    socket.connect("tcp://localhost:5555")  # Connect to the server
+
+    # Prepare the request data
+    request = {
+        'METS': METS,
+        'weight': weight,
+        'duration': duration
+    }
+    # Send the request
+    socket.send_json(request)
+
+    # Wait for the reply
+    response = socket.recv_json()
+    return response
+
+
+def choose_exercise(user_amr, weight):
     """Logs an exercise a user has done."""
-    pass
+    clear()
+    while True:
+        print("What workout or exercise did you do?")
+        for category_number in exercise_data:
+            print(f'{category_number}. {exercise_data[category_number]["type"]}')
+        print("8. Go back")
+        try:
+            exercise_choice = int(input("Enter the number corresponding with your selection here. "))
+            if exercise_choice not in range(1, 9):
+                print("Sorry, that is not a valid input. Let's try again.")
+            elif exercise_choice == 5:
+                clear()
+                break
+            else:
+                clear()
+                print(f'You picked {exercise_data[exercise_choice]["type"].lower()}. Below are various effort levels.'
+                      f' What best matches the exercise you completed?')
+                while True:
+                    for item in exercise_data[exercise_choice]["effort"]:
+                        print(f'{item} | {exercise_data[exercise_choice]["effort"][item]["description"]}')
+                    print("\n")
+                    item_choice = input("Type your selection here. ").lower()
+                    while True:
+                        try:
+                            duration = int(input("For how many minutes did you conduct this exercise? "))
+                            if duration > 0:
+                                break
+                            else:
+                                print("Your exercise duration cannot be negative.")
+                        except ValueError:
+                            print("You must enter a number.")
+                    if item_choice in exercise_data[exercise_choice]["effort"]:
+                        calories_burned = get_burned_calories(exercise_data[exercise_choice]["effort"][item_choice]["METS"], weight, duration)
+                        calories_remaining = update_calories(user_amr, 0, 0, calories_burned)
+                        return calories_remaining
+                    else:
+                        clear()
+                        print("We could not calculate how many calories you burned.")
+        except ValueError:
+            print("Sorry, that is not a valid input. Let's try again.")
+        except KeyError:
+            print("Sorry, that is not a valid input. Let's try again.")
 
 
 def main_menu_choice(user_data, user_amr):
-    """Determine's user's choice re: whether to log food, log exercise, or exit Calorie Tracker."""
+    """Determines user's choice re: whether to log food, log exercise, or exit Calorie Tracker."""
     while True:
         try:
             choice = int(input(
