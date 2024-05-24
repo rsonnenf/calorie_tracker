@@ -1,4 +1,4 @@
-import fitness_goals, time
+import fitness_goals, time, zmq
 
 print("""   _____      _            _        _______             _             
   / ____|    | |          (_)      |__   __|           | |            
@@ -10,7 +10,7 @@ print("""   _____      _            _        _______             _
 
 
 def clear():
-    print("\n" * 1000)
+    print("\n" * 50)
 
 
 print("Welcome to Calorie Tracker!\n"
@@ -40,6 +40,7 @@ while True:
 
     # If user opts not to provide data, use standard 2000 calorie diet.
     elif opt_in_choice == 2:
+        user_data["user_weight"] = 70
         user_amr = 2000
         break
     else:
@@ -55,7 +56,8 @@ while True:
     if user_main_menu_choice == 1:
         user_amr = fitness_goals.log_food(user_amr)
     elif user_main_menu_choice == 2:
-        fitness_goals.log_exercise()
+        updated_calories = fitness_goals.choose_exercise(user_amr, user_data["user_weight"])
+        user_amr = updated_calories
     elif user_main_menu_choice == 3:
         clear()
         print("Thank you for using Calorie Tracker!")
