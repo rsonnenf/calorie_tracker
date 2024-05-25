@@ -1,4 +1,4 @@
-import zmq
+import zmq, json
 
 goals = {1: "Lose Weight",
          2: "Gain Weight",
@@ -11,6 +11,8 @@ activity_levels = {1: "sedentary",
                    4: "active",
                    5: "very active"
                    }
+
+
 
 foods = {
     1: {
@@ -408,7 +410,7 @@ def update_calories(user_amr, calories_consumed, num_servings, calories_exerted)
     return user_amr
 
 
-def log_food(user_amr):
+def log_food(user_amr, food_log):
     """Logs a food a user has eaten."""
     clear()
     while True:
@@ -447,6 +449,10 @@ def log_food(user_amr):
                                                        foods[food_group_choice]["items"][item_choice]["calories"],
                                                        num_servings, 0)
                         user_amr = new_user_amr
+                        # Enter food in and calories consumed in food log.
+                        food_key = str(foods[food_group_choice]["items"][item_choice])
+                        total_calories_consumed = foods[food_group_choice]["items"][item_choice]["calories"] * num_servings
+                        food_log.append({"food_name": item_choice, "calories_consumed": total_calories_consumed})
                         return user_amr
                     else:
                         print("We did not locate that food. Please check your food choice and spelling.")
@@ -476,7 +482,7 @@ def get_burned_calories(METS, weight, duration):
     return response
 
 
-def choose_exercise(user_amr, weight):
+def choose_exercise(user_amr, weight, exercise_log):
     """Logs an exercise a user has done."""
     clear()
     while True:
@@ -488,7 +494,7 @@ def choose_exercise(user_amr, weight):
             exercise_choice = int(input("Enter the number corresponding with your selection here. "))
             if exercise_choice not in range(1, 9):
                 print("Sorry, that is not a valid input. Let's try again.")
-            elif exercise_choice == 5:
+            elif exercise_choice == 8:
                 clear()
                 break
             else:
@@ -510,8 +516,12 @@ def choose_exercise(user_amr, weight):
                         except ValueError:
                             print("You must enter a number.")
                     if item_choice in exercise_data[exercise_choice]["effort"]:
-                        calories_burned = get_burned_calories(exercise_data[exercise_choice]["effort"][item_choice]["METS"], weight, duration)
+                        calories_burned = get_burned_calories(
+                            exercise_data[exercise_choice]["effort"][item_choice]["METS"], weight, duration)
                         calories_remaining = update_calories(user_amr, 0, 0, calories_burned)
+                        # Add to exercise_data dictionary for compiling of report
+                        exercise_name = exercise_data[exercise_choice]["type"]
+                        exercise_log.append({"exercise_name": exercise_name, "calories_burned": calories_burned})
                         return calories_remaining
                     else:
                         clear()
@@ -520,6 +530,24 @@ def choose_exercise(user_amr, weight):
             print("Sorry, that is not a valid input. Let's try again.")
         except KeyError:
             print("Sorry, that is not a valid input. Let's try again.")
+
+
+def produce_log(food_log, exercise_log):
+    """Sends request to prepare_log microservice to return a log of all foods eaten and exercises performed."""
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)  # REQ (REQUEST) socket for sending requests
+    socket.connect("tcp://localhost:5600")  # Connect to the server
+
+    # Prepare logs to send
+    food_log_json = json.dumps(food_log)
+    exercise_log_json = json.dumps(exercise_log)
+
+    # Send logs
+    socket.send_json({'food': food_log_json, 'exercise': exercise_log_json})
+
+    # Wait for the reply
+    response = socket.recv_string()
+    return response
 
 
 def main_menu_choice(user_data, user_amr):
@@ -531,10 +559,11 @@ def main_menu_choice(user_data, user_amr):
                  f'today. What would you like to do? \n'
                  f'1. Log food.\n'
                  f'2. Log exercise.\n'
-                 f'3. Exit Calorie Tracker.\n'
+                 f'3. Generate food and exercise report.\n'
+                 f'4. Exit Calorie Tracker.\n'
                  f'\n'
                  f'Enter your selection here: ')))
-            if choice not in range(1, 4):
+            if choice not in range(1, 5):
                 print("Sorry, that is not a valid input. Let's try again.")
             else:
                 return choice

@@ -16,6 +16,9 @@ def clear():
 print("Welcome to Calorie Tracker!\n"
       "Use this app to track your fitness goals and obtain personalized assessments of your fitness habits!\n")
 user_data = {}
+food_log = []
+exercise_log = []
+
 # Obtain user's fitness goal
 print("***YOUR FITNESS GOAL***")
 fitness_goals.obtain_fitness_goal(user_data)
@@ -54,11 +57,14 @@ print("***YOUR PLAN***")
 while True:
     user_main_menu_choice = fitness_goals.main_menu_choice(user_data, user_amr)
     if user_main_menu_choice == 1:
-        user_amr = fitness_goals.log_food(user_amr)
+        user_amr = fitness_goals.log_food(user_amr, food_log)
     elif user_main_menu_choice == 2:
-        updated_calories = fitness_goals.choose_exercise(user_amr, user_data["user_weight"])
+        updated_calories = fitness_goals.choose_exercise(user_amr, user_data["user_weight"], exercise_log)
         user_amr = updated_calories
     elif user_main_menu_choice == 3:
+        clear()
+        print(fitness_goals.produce_log(food_log, exercise_log))
+    elif user_main_menu_choice == 4:
         clear()
         print("Thank you for using Calorie Tracker!")
         time.sleep(3)
