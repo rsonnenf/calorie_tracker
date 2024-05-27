@@ -1,5 +1,6 @@
 import json
 import zmq
+from rng_quote_gen_microservice import rng_affirmation_generator
 
 
 def generate_exercise_duration_report(exercise_data):
@@ -10,11 +11,25 @@ def generate_exercise_duration_report(exercise_data):
     remaining_time = 30 - total_time_exercised
 
     if remaining_time > 0:
+
+        # Implement random quote generator microservice
+        rng_affirmation_generator()
+        try:
+            with open("quote.txt", "r") as file:
+                quote = file.read()
+                print(quote)
+            response = f'The Mayo Clinic recommends 30 minutes of exercise daily. Based on your logged exercise time,' \
+                       f'you should exercise for {remaining_time} more minutes to reach that goal. {quote}'
+
+        except IOError as e:
+            print(f"An error occurred while reading the file: {e}. Retrying in 3 seconds...")
+
+    elif remaining_time == 0:
         response = f'The Mayo Clinic recommends 30 minutes of exercise daily. Based on your logged exercise time,' \
                    f'you should exercise for {remaining_time} more minutes to reach that goal.'
 
     else:
-        response = f' The May Clinic recommends 30 minutes of exercise daily. Based on your logged exercise time, ' \
+        response = f'The Mayo Clinic recommends 30 minutes of exercise daily. Based on your logged exercise time, ' \
                    f'you have reached that goal!'
 
     return response
