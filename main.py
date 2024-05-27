@@ -66,6 +66,9 @@ while True:
         print(fitness_goals.produce_log(food_log, exercise_log))
     elif user_main_menu_choice == 4:
         clear()
+        print(fitness_goals.check_recommended_exercise_goal(exercise_log))
+    elif user_main_menu_choice == 5:
+        clear()
         print("Thank you for using Calorie Tracker!")
         time.sleep(3)
         exit()

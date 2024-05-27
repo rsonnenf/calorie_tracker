@@ -521,7 +521,7 @@ def choose_exercise(user_amr, weight, exercise_log):
                         calories_remaining = update_calories(user_amr, 0, 0, calories_burned)
                         # Add to exercise_data dictionary for compiling of report
                         exercise_name = exercise_data[exercise_choice]["type"]
-                        exercise_log.append({"exercise_name": exercise_name, "calories_burned": calories_burned})
+                        exercise_log.append({"exercise_name": exercise_name, "duration": duration, "calories_burned": calories_burned})
                         return calories_remaining
                     else:
                         clear()
@@ -550,6 +550,23 @@ def produce_log(food_log, exercise_log):
     return response
 
 
+def check_recommended_exercise_goal(exercise_log):
+    """Sends request to exercise_duration_tracker microservice to return a report of whether exercise goal is met."""
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)  # REQ (REQUEST) socket for sending requests
+    socket.connect("tcp://localhost:5700")  # Connect to the server
+
+    # Prepare logs to send
+    exercise_log_json = json.dumps(exercise_log)
+
+    # Send logs
+    socket.send_json(exercise_log_json)
+
+    # Wait for the reply
+    response = socket.recv_string()
+    return response
+
+
 def main_menu_choice(user_data, user_amr):
     """Determines user's choice re: whether to log food, log exercise, or exit Calorie Tracker."""
     while True:
@@ -560,10 +577,11 @@ def main_menu_choice(user_data, user_amr):
                  f'1. Log food.\n'
                  f'2. Log exercise.\n'
                  f'3. Generate food and exercise report.\n'
-                 f'4. Exit Calorie Tracker.\n'
+                 f'4. Check exercise duration goal. \n'
+                 f'5. Exit Calorie Tracker.\n'
                  f'\n'
                  f'Enter your selection here: ')))
-            if choice not in range(1, 5):
+            if choice not in range(1, 6):
                 print("Sorry, that is not a valid input. Let's try again.")
             else:
                 return choice
