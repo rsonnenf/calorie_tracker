@@ -21,5 +21,5 @@ In this portfolio project for my Software Engineering I course, I created a calo
 
 ## Reflection
 
-This was my first attempt at creating a program using microservices that interact through a communication pipe. In addition to honing some of my Python skills, I learned about the benefits of using microservices, which--given their more "decentralized" nature--allows for easier maintenance of an overall program and more flexibility for team productivity and deployment during development.
+This was my first experience with creating a program using microservices that interact through a communication pipe. In addition to honing some of my Python skills, I learned about the benefits of using microservices, which--given their more "decentralized" nature--allows for easier maintenance of an overall program and more flexibility for team productivity and deployment during development.
 
