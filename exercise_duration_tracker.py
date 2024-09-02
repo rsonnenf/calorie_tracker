@@ -42,6 +42,7 @@ socket.bind("tcp://*:5700")  # Bind to port 5700
 while True:
     # Wait for next request from client
     exercise_log_json = socket.recv_json()
+    print(f"Request received: {exercise_log_json}")
 
     # Unpack log
     exercise_dictionary = json.loads(exercise_log_json)
@@ -50,4 +51,5 @@ while True:
     report = generate_exercise_duration_report(exercise_dictionary)
 
     # Send response to main program
+    print(f"Response returned: {report}")
     socket.send_string(report)

@@ -25,13 +25,14 @@ def generate_daily_report(food_data, exercise_data):
 
 context = zmq.Context()
 socket = context.socket(zmq.REP)  # Socket for sending responses
-socket.bind("tcp://*:5600")  # Bind to port 5600
+socket.bind("tcp://*:5554")  # Bind to port 5600
 
 while True:
     # Wait for next request from client
     logs = socket.recv_json()
     food_json = logs['food']
     exercise_json = logs['exercise']
+    print(f"Request Received: {logs}")
 
     # Unpack lists
     food_dictionary = json.loads(food_json)
@@ -41,4 +42,5 @@ while True:
     report = generate_daily_report(food_dictionary, exercise_dictionary)
 
     # Send response to main program
+    print(f"Response to be sent: {report}")
     socket.send_string(report)
